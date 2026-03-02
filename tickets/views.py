@@ -1,64 +1,62 @@
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Ticket
 from .serializers import TicketSerializer
 
 
-@api_view(["GET", "POST", "PUT", "PATCH", "DELETE"])
-@permission_classes([IsAuthenticated])
-def ticket_list_create(request):
-    if request.method == "GET":
-        tickets = Ticket.objects.all()
-        serializer = TicketSerializer(tickets, many=True)
-        return Response(serializer.data)
+class TicketViewSet(ModelViewSet):
+    serializer_class = TicketSerializer
+    permission_classes = [IsAuthenticated]
 
-    if request.method == "POST":
-        serializer = TicketSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(created_by=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # Control what tickets user can see
+    def get_queryset(self):
+        user = self.request.user
 
-@api_view(["GET", "PUT", "PATCH", "DELETE"])
-@permission_classes([IsAuthenticated])
-def ticket_detail(request, pk):
-    try:
-        ticket = Ticket.objects.get(pk=pk)
-    except Ticket.DoesNotExist:
-        return Response(
-            {"error": "Ticket not found"},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        if user.is_staff:
+            return Ticket.objects.all()
+        return Ticket.objects.filter(created_by=user)
 
-    if request.method == "GET":
-        serializer = TicketSerializer(ticket)
-        return Response(serializer.data)
+    # Automatically set created_by
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
 
-    if request.method == "PUT":
-        serializer = TicketSerializer(ticket, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    # Restrict updates (status + assignment rules)
+    def update(self, request, *args, **kwargs):
+        ticket = self.get_object()
 
-    if request.method == "PATCH":
-        serializer = TicketSerializer(ticket, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # Normal user restrictions
+        if not request.user.is_staff:
+            if "status" in request.data:
+                return Response(
+                    {"error": "You cannot change ticket status"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
-    if request.method == "DELETE":
-        ticket.delete()
-        return Response(
-            {"message": "Ticket deleted successfully"},
-            status=status.HTTP_204_NO_CONTENT
-        )
-    
+            if "assigned_to" in request.data:
+                return Response(
+                    {"error": "You cannot assign tickets"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        return super().update(request, *args, **kwargs)
+
+    # Restrict delete
+    def destroy(self, request, *args, **kwargs):
+        ticket = self.get_object()
+
+        if not request.user.is_staff and ticket.created_by != request.user:
+            return Response(
+                {"error": "You cannot delete this ticket"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        return super().destroy(request, *args, **kwargs)
+
+
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 

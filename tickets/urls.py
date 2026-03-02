@@ -1,8 +1,7 @@
-from django.urls import path
-from .views import LogoutView, ticket_detail, ticket_list_create
+from rest_framework.routers import DefaultRouter
+from .views import TicketViewSet
 
-urlpatterns = [
-    path("", ticket_list_create),
-    path("logout/", LogoutView.as_view()),
-    path("tickets/<int:pk>/", ticket_detail)
-]
+router = DefaultRouter()
+router.register(r'tickets', TicketViewSet, basename='ticket')
+
+urlpatterns = router.urls
