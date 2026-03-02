@@ -1,6 +1,7 @@
 from django.urls import path
-from .views import ticket_list_create
+from .views import LogoutView, ticket_list_create
 
 urlpatterns = [
     path("", ticket_list_create),
+    path("logout/", LogoutView.as_view()),
 ]
