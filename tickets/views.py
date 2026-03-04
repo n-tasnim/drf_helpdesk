@@ -18,9 +18,11 @@ class TicketViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
+        queryset = Ticket.objects.select_related("created_by")
+
         if user.is_staff:
-            return Ticket.objects.all()
-        return Ticket.objects.filter(created_by=user)
+            return queryset
+        return queryset.filter(created_by=user)
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
