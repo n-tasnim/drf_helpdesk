@@ -84,9 +84,13 @@ WSGI_APPLICATION = 'helpdesk_api.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "ticketdb",
+        "USER": "ticketuser",
+        "PASSWORD": "password123",
+        "HOST": "localhost",
+        "PORT": "5432",
     }
 }
 
