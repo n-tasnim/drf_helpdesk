@@ -1,5 +1,4 @@
 from django.shortcuts import get_object_or_404
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -21,9 +20,12 @@ class TicketList(APIView):
             tickets = Ticket.objects.select_related("created_by")
         else:
             tickets = Ticket.objects.filter(created_by=user)
+        
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(tickets, request)
 
-        serializer = TicketSerializer(tickets, many=True)
-        return Response(serializer.data)
+        serializer = TicketSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
         serializer = TicketSerializer(data=request.data)
@@ -42,11 +44,15 @@ class TicketDetail(APIView):
     
     def get(self, request, pk):
         ticket = self.get_object(pk)
+        self.check_object_permissions(request, ticket)
+
         serializer = TicketSerializer(ticket)
         return Response(serializer.data)
     
     def patch(self, request, pk):
         ticket = self.get_object(pk)
+        self.check_object_permissions(request, ticket)
+
         serializer = TicketSerializer(ticket, data=request.data, partial=True)
 
         if serializer.is_valid():
@@ -57,6 +63,7 @@ class TicketDetail(APIView):
     
     def delete(self, request, pk):
         ticket = self.get_object(pk)
+        self.check_object_permissions(request, ticket)
         ticket.delete()
         return Response(status=204)
 

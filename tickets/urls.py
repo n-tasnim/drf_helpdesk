@@ -2,8 +2,6 @@ from django.urls import path, include
 from .views import TicketDetail, TicketList, LogoutView
 from django.conf import settings
 
-
-
 urlpatterns = [
     path('', TicketList.as_view(), name='ticket-list'),
     path('<int:pk>/', TicketDetail.as_view(), name='ticket-detail'),
