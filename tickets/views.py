@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -9,23 +10,55 @@ from tickets.permissions import IsAdminOrOwner
 from .models import Ticket
 from .serializers import TicketSerializer
 
-
-class TicketViewSet(ModelViewSet):
-    serializer_class = TicketSerializer
-    permission_classes = [IsAuthenticated, IsAdminOrOwner]
+class TicketList(APIView):
+    permission_classes = [IsAuthenticated]
     pagination_class = TicketPagination
 
-    def get_queryset(self):
-        user = self.request.user
-
-        queryset = Ticket.objects.select_related("created_by")
+    def get(self, request):
+        user = request.user
 
         if user.is_staff:
-            return queryset
-        return queryset.filter(created_by=user)
+            tickets = Ticket.objects.select_related("created_by")
+        else:
+            tickets = Ticket.objects.filter(created_by=user)
 
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer = TicketSerializer(tickets, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = TicketSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(created_by=request.user)
+            return Response(serializer.data, status=201)
+
+        return Response(serializer.errors, status=400)
+    
+class TicketDetail(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrOwner]
+
+    def get_object(self, pk):
+        return get_object_or_404(Ticket, pk=pk)
+    
+    def get(self, request, pk):
+        ticket = self.get_object(pk)
+        serializer = TicketSerializer(ticket)
+        return Response(serializer.data)
+    
+    def patch(self, request, pk):
+        ticket = self.get_object(pk)
+        serializer = TicketSerializer(ticket, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=400)
+    
+    def delete(self, request, pk):
+        ticket = self.get_object(pk)
+        ticket.delete()
+        return Response(status=204)
 
  
 class LogoutView(APIView):
