@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import LoginView, TicketDetail, TicketList, LogoutView, RegistrationView, UserProfileView
+from .views import LoginView, TicketDetail, TicketList, LogoutView, RegistrationView
 from django.conf import settings
 
 urlpatterns = [

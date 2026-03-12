@@ -56,21 +56,18 @@ class RegistrationView(APIView):
         phone = request.data.get("phone")
         username = request.data.get("username")
         
-        # Validation
         if password != confirm_password:
             return Response({"error": "Passwords do not match"}, status=400)
         
         if len(password) < 8:
             return Response({"error": "Password must be at least 8 characters"}, status=400)
         
-        # Check if user already exists
         if User.objects.filter(email=email).exists():
             return Response({"error": "Email already registered"}, status=400)
         
         if User.objects.filter(username=username).exists():
             return Response({"error": "Username already taken"}, status=400)
         
-        # Create new user
         user = User.objects.create_user(
             username=username,
             email=email,
@@ -78,7 +75,6 @@ class RegistrationView(APIView):
             phone=phone
         )
         
-        # Generate tokens
         refresh = RefreshToken.for_user(user)
         return Response({
             "message": "Registration successful",
