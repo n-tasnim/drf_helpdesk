@@ -21,11 +21,13 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from tickets.views import LoginPageView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('tickets/', include("tickets.urls")),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("login/", LoginPageView.as_view(), name="login_page"),
     path("", lambda request: HttpResponse("Django inside Docker is working!")),
 ]

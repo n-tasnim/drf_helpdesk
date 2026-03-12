@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -8,6 +8,45 @@ from tickets.pagination import TicketPagination
 from tickets.permissions import IsAdminOrOwner
 from .models import Ticket
 from .serializers import TicketSerializer
+from django.contrib.auth import authenticate, get_user_model
+from django.views import View
+from django.db.models import Q
+
+User = get_user_model() 
+
+
+class LoginPageView(View):
+    def get(self, request):
+        return render(request, 'login.html') 
+
+class LoginView(APIView):
+    permission_classes = []
+    
+    def get(self, request):
+        return render(request, 'login.html')
+    
+    def post(self, request):
+        email_or_phone = request.data.get("email_or_phone")
+        password = request.data.get("password")
+
+        try:
+            user = User.objects.get(
+                Q(email=email_or_phone) | Q(phone=email_or_phone)
+            )
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=400)
+        
+        user = authenticate(username=user.username, password=password)
+
+        if user is None:
+            return Response({"error": "Invalid credentials"}, status=401)
+        
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token)
+        })
+
 
 class TicketList(APIView):
     permission_classes = [IsAuthenticated]

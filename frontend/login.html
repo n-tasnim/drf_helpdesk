@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+<body>
+
+<form id="loginForm">
+    <h2>Login</h2>
+    <div class="error" id="errorMsg"></div>
+
+    <input type="text" id="email_phone" placeholder="Email or Phone" required>
+    <br><br>
+
+    <input type="password" id="password" placeholder="Password" required>
+    <br><br>
+
+    <button type="submit">Submit</button>
+</form>
+
+<script>
+document.getElementById("loginForm").onsubmit = async function(e) {
+    e.preventDefault();
+
+    const email_phone = document.getElementById("email_phone").value;
+    const password = document.getElementById("password").value;
+    const errorMsg = document.getElementById("errorMsg");
+
+    try {
+        const response = await fetch("http://127.0.0.1:8000/tickets/login/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email_or_phone: email_phone,
+                password: password
+            })
+        });
+
+        const data = await response.json();
+        console.log(data);
+
+        if (response.ok && data.access) {
+            localStorage.setItem("access_token", data.access);
+            localStorage.setItem("refresh_token", data.refresh);
+            alert("Login successful!");
+            window.location.href = "/";
+        } else {
+            errorMsg.textContent = data.error || "Login failed";
+            errorMsg.style.display = "block";
+        }
+    } catch (error) {
+        errorMsg.textContent = "Error: " + error.message;
+        errorMsg.style.display = "block";
+    }
+}
+</script>
+
+</body>
+</html>
