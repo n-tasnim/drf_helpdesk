@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Profile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .profile-section {
+            margin-bottom: 20px;
+        }
+        
+        .profile-label {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .profile-value {
+            color: #555;
+            font-size: 16px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .logout-btn {
+            background: #d32f2f;
+        }
+        
+        .error {
+            color: #d32f2f;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
+            padding: 10px;
+            background: #ffebee;
+            border-radius: 5px;
+        }
+        
+        .success {
+            color: #388e3c;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 5px;
+        }
+
+        .view-mode {
+            display: none;
+        }
+
+        .edit-mode {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>User Profile</h1>
+    
+    <div class="error" id="errorMsg"></div>
+    <div class="success" id="successMsg"></div>
+    
+    <div id="viewMode" class="view-mode">
+        <div class="profile-section">
+            <div class="profile-label">Username</div>
+            <div class="profile-value" id="view-username"></div>
+        </div>
+        
+        <div class="profile-section">
+            <div class="profile-label">Email</div>
+            <div class="profile-value" id="view-email"></div>
+        </div>
+        
+        <div class="profile-section">
+            <div class="profile-label">Phone</div>
+            <div class="profile-value" id="view-phone"></div>
+        </div>
+        
+        <div class="profile-section">
+            <div class="profile-label">First Name</div>
+            <div class="profile-value" id="view-first-name"></div>
+        </div>
+        
+        <div class="profile-section">
+            <div class="profile-label">Last Name</div>
+            <div class="profile-value" id="view-last-name"></div>
+        </div>
+        
+        <div class="profile-section">
+            <div class="profile-label">Member Since</div>
+            <div class="profile-value" id="view-date-joined"></div>
+        </div>
+
+        <div class="button-group">
+            <button onclick="toggleEditMode()">Edit Profile</button>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+    
+
+    <form id="editForm" class="edit-mode">
+        <div class="profile-section">
+            <div class="profile-label">Username (Cannot change)</div>
+            <div class="profile-value" id="edit-username"></div>
+        </div>
+        
+        <div class="profile-section">
+            <div class="profile-label">Email (Cannot change)</div>
+            <div class="profile-value" id="edit-email"></div>
+        </div>
+        
+        <div class="profile-section">
+            <label class="profile-label">Phone</label>
+            <input type="tel" id="edit-phone" placeholder="Phone">
+        </div>
+        
+        <div class="profile-section">
+            <label class="profile-label">First Name</label>
+            <input type="text" id="edit-first-name" placeholder="First Name">
+        </div>
+        
+        <div class="profile-section">
+            <label class="profile-label">Last Name</label>
+            <input type="text" id="edit-last-name" placeholder="Last Name">
+        </div>
+
+        <div class="button-group">
+            <button type="submit">Save Changes</button>
+            <button type="button" onclick="toggleEditMode()">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<script>
+let userData = null;
+
+window.onload = async function() {
+    await loadProfile();
+};
+
+async function loadProfile() {
+    const accessToken = localStorage.getItem("access_token");
+    
+    if (!accessToken) {
+        window.location.href = "/login/";
+        return;
+    }
+    
+    try {
+        const response = await fetch("http://127.0.0.1:8000/api/profile/", {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`,
+                "Content-Type": "application/json"
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error("Failed to load profile");
+        }
+        
+        userData = await response.json();
+        displayProfile();
+    } catch (error) {
+        const errorMsg = document.getElementById("errorMsg");
+        errorMsg.textContent = "Error: " + error.message;
+        errorMsg.style.display = "block";
+    }
+}
+
+function displayProfile() {
+    document.getElementById("view-username").textContent = userData.username;
+    document.getElementById("view-email").textContent = userData.email;
+    document.getElementById("view-phone").textContent = userData.phone || "Not set";
+    document.getElementById("view-first-name").textContent = userData.first_name || "Not set";
+    document.getElementById("view-last-name").textContent = userData.last_name || "Not set";
+    document.getElementById("view-date-joined").textContent = new Date(userData.date_joined).toLocaleDateString();
+    
+    
+    document.getElementById("edit-username").textContent = userData.username;
+    document.getElementById("edit-email").textContent = userData.email;
+    document.getElementById("edit-phone").value = userData.phone || "";
+    document.getElementById("edit-first-name").value = userData.first_name || "";
+    document.getElementById("edit-last-name").value = userData.last_name || "";
+}
+
+function toggleEditMode() {
+    const viewMode = document.getElementById("viewMode");
+    const editForm = document.getElementById("editForm");
+    
+    if (viewMode.style.display === "none") {
+        viewMode.style.display = "block";
+        editForm.style.display = "none";
+    } else {
+        viewMode.style.display = "none";
+        editForm.style.display = "block";
+    }
+}
+
+document.getElementById("editForm").onsubmit = async function(e) {
+    e.preventDefault();
+    
+    const accessToken = localStorage.getItem("access_token");
+    const errorMsg = document.getElementById("errorMsg");
+    const successMsg = document.getElementById("successMsg");
+    
+    errorMsg.style.display = "none";
+    successMsg.style.display = "none";
+    
+    try {
+        const response = await fetch("http://127.0.0.1:8000/api/profile/", {
+            method: "PATCH",
+            headers: {
+                "Authorization": `Bearer ${accessToken}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                first_name: document.getElementById("edit-first-name").value,
+                last_name: document.getElementById("edit-last-name").value,
+                phone: document.getElementById("edit-phone").value
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            successMsg.textContent = "Profile updated successfully!";
+            successMsg.style.display = "block";
+            await loadProfile();
+            toggleEditMode();
+        } else {
+            errorMsg.textContent = data.error || "Failed to update profile";
+            errorMsg.style.display = "block";
+        }
+    } catch (error) {
+        errorMsg.textContent = "Error: " + error.message;
+        errorMsg.style.display = "block";
+    }
+}
+
+function logout() {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    alert("Logged out successfully!");
+    window.location.href = "/login/";
+}
+</script>
+
+</body>
+</html>

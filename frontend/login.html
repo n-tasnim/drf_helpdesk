@@ -2,6 +2,92 @@
 <html>
 <head>
     <title>Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        form {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .error {
+            color: #d32f2f;
+            text-align: center;
+            margin-bottom: 15px;
+            display: none;
+            padding: 10px;
+            background: #ffebee;
+            border-radius: 5px;
+        }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .register-link a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
 
@@ -10,12 +96,14 @@
     <div class="error" id="errorMsg"></div>
 
     <input type="text" id="email_phone" placeholder="Email or Phone" required>
-    <br><br>
 
     <input type="password" id="password" placeholder="Password" required>
-    <br><br>
 
     <button type="submit">Submit</button>
+
+    <div class="register-link">
+        Don't have an account? <a href="/register/">Register here</a>
+    </div>
 </form>
 
 <script>
@@ -25,6 +113,8 @@ document.getElementById("loginForm").onsubmit = async function(e) {
     const email_phone = document.getElementById("email_phone").value;
     const password = document.getElementById("password").value;
     const errorMsg = document.getElementById("errorMsg");
+
+    errorMsg.style.display = "none";
 
     try {
         const response = await fetch("http://127.0.0.1:8000/tickets/login/", {
@@ -45,7 +135,7 @@ document.getElementById("loginForm").onsubmit = async function(e) {
             localStorage.setItem("access_token", data.access);
             localStorage.setItem("refresh_token", data.refresh);
             alert("Login successful!");
-            window.location.href = "/";
+            window.location.href = "/profile/";
         } else {
             errorMsg.textContent = data.error || "Login failed";
             errorMsg.style.display = "block";

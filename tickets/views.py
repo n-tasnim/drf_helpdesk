@@ -14,11 +14,6 @@ from django.db.models import Q
 
 User = get_user_model() 
 
-
-class LoginPageView(View):
-    def get(self, request):
-        return render(request, 'login.html') 
-
 class LoginView(APIView):
     permission_classes = []
     
@@ -46,6 +41,82 @@ class LoginView(APIView):
             "refresh": str(refresh),
             "access": str(refresh.access_token)
         })
+
+
+class RegistrationView(APIView):
+    permission_classes = []
+    
+    def get(self, request):
+        return render(request, 'registration.html')
+    
+    def post(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+        confirm_password = request.data.get("confirm_password")
+        phone = request.data.get("phone")
+        username = request.data.get("username")
+        
+        # Validation
+        if password != confirm_password:
+            return Response({"error": "Passwords do not match"}, status=400)
+        
+        if len(password) < 8:
+            return Response({"error": "Password must be at least 8 characters"}, status=400)
+        
+        # Check if user already exists
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "Email already registered"}, status=400)
+        
+        if User.objects.filter(username=username).exists():
+            return Response({"error": "Username already taken"}, status=400)
+        
+        # Create new user
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            phone=phone
+        )
+        
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "message": "Registration successful",
+            "refresh": str(refresh),
+            "access": str(refresh.access_token)
+        }, status=201)
+
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "phone": user.phone,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "date_joined": user.date_joined,
+            "is_staff": user.is_staff
+        })
+    
+    def patch(self, request):
+        user = request.user
+        user.first_name = request.data.get("first_name", user.first_name)
+        user.last_name = request.data.get("last_name", user.last_name)
+        user.phone = request.data.get("phone", user.phone)
+        user.save()
+        return Response({"message": "Profile updated successfully"})
+
+
+class ProfilePageView(View):
+    permission_classes = []
+    
+    def get(self, request):
+        return render(request, 'profile.html')
 
 
 class TicketList(APIView):
