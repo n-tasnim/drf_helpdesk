@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from tickets.pagination import TicketPagination
 from tickets.permissions import IsAdminOrOwner
-from .models import Ticket, User
+from .models import Ticket, User, UserProfile
 from .serializers import TicketSerializer, UserProfileSerializer, UserSerializer
 from django.views import View
 from django.db.models import Q
@@ -21,7 +21,7 @@ class LoginView(APIView):
 
         try:
             user = User.objects.get(
-                Q(email=email_or_phone) | Q(phone=email_or_phone)
+                Q(email=email_or_phone) | Q(profile__phone=email_or_phone)
             )
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=400)
@@ -46,7 +46,6 @@ class RegistrationView(APIView):
         phone = request.data.get("phone")
         password = request.data.get("password")
         confirm_password = request.data.get("confirm_password")
-        phone = request.data.get("phone")
         username = request.data.get("username")
 
         if password != confirm_password:
@@ -64,9 +63,12 @@ class RegistrationView(APIView):
         user = User.objects.create_user(
             username=username,
             email=email,
-            password=password,
-            phone=phone
+            password=password
         )
+
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        profile.phone = phone
+        profile.save()
         
         refresh = RefreshToken.for_user(user)
         return Response({
@@ -80,8 +82,9 @@ class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
+        
         serializer = UserSerializer(request.user)
-        return Response({serializer.data})
+        return Response(serializer.data)
     
     def patch(self, request):
         profile = request.user.profile
@@ -90,7 +93,6 @@ class UserProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
-
 
 class TicketList(APIView):
     permission_classes = [IsAuthenticated]

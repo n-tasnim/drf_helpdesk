@@ -18,7 +18,7 @@ class UserProfile(models.Model):
 @receiver(post_save, sender=User)
 def create_profile(sender, instance, created, **kwargs):
     if created:
-        UserProfile.objects.create(user=instance) #creates profile automatically after login
+        UserProfile.objects.create(user=instance) 
 
 class Ticket(models.Model):
     class Status(models.TextChoices):

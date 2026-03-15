@@ -6,12 +6,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ["phone", "address"]
 
-class UserSerializer(serializers.ModelSerializer):
-    profile = UserProfileSerializer()
-
-    class Meta:
-        model = User
-        fields = ["id", "username", "email", "phone", "profile"]
 
 class TicketSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source="created_by.username")
@@ -27,6 +21,18 @@ class TicketSerializer(serializers.ModelSerializer):
             "created_by",
             "created_at",
         ]
+
+class UserSerializer(serializers.ModelSerializer):
+    profile = UserProfileSerializer()
+    tickets = TicketSerializer(many=True, read_only=True)
+    ticket_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = ["id", "username", "email", "profile", "tickets", "ticket_count"]
+
+    def get_ticket_count(self, obj):
+        return obj.tickets.count()
 
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")

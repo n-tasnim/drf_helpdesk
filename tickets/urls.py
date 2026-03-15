@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import LoginView, TicketDetail, TicketList, LogoutView, RegistrationView
+from .views import LoginView, TicketDetail, TicketList, LogoutView, RegistrationView, UserProfileView
 from django.conf import settings
 
 urlpatterns = [
@@ -8,6 +8,7 @@ urlpatterns = [
     path('', TicketList.as_view(), name='ticket-list'),
     path('<int:pk>/', TicketDetail.as_view(), name='ticket-detail'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    path('profile/', UserProfileView.as_view(), name='profile'),
 ]
 
 if settings.DEBUG:
