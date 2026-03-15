@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
@@ -6,19 +6,14 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from tickets.pagination import TicketPagination
 from tickets.permissions import IsAdminOrOwner
-from .models import Ticket
-from .serializers import TicketSerializer
-from django.contrib.auth import authenticate, get_user_model
+from .models import Ticket, User
+from .serializers import TicketSerializer, UserProfileSerializer, UserSerializer
 from django.views import View
 from django.db.models import Q
-
-User = get_user_model() 
+from django.contrib.auth import authenticate
 
 class LoginView(APIView):
     permission_classes = []
-    
-    def get(self, request):
-        return render(request, 'login.html')
     
     def post(self, request):
         email_or_phone = request.data.get("email_or_phone")
@@ -46,16 +41,14 @@ class LoginView(APIView):
 class RegistrationView(APIView):
     permission_classes = []
     
-    def get(self, request):
-        return render(request, 'registration.html')
-    
     def post(self, request):
-        email = request.data.get("email")
+        email= request.data.get("email")
+        phone = request.data.get("phone")
         password = request.data.get("password")
         confirm_password = request.data.get("confirm_password")
         phone = request.data.get("phone")
         username = request.data.get("username")
-        
+
         if password != confirm_password:
             return Response({"error": "Passwords do not match"}, status=400)
         
@@ -87,32 +80,16 @@ class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        user = request.user
-        return Response({
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "phone": user.phone,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "date_joined": user.date_joined,
-            "is_staff": user.is_staff
-        })
+        serializer = UserSerializer(request.user)
+        return Response({serializer.data})
     
     def patch(self, request):
-        user = request.user
-        user.first_name = request.data.get("first_name", user.first_name)
-        user.last_name = request.data.get("last_name", user.last_name)
-        user.phone = request.data.get("phone", user.phone)
-        user.save()
-        return Response({"message": "Profile updated successfully"})
-
-
-class ProfilePageView(View):
-    permission_classes = []
-    
-    def get(self, request):
-        return render(request, 'profile.html')
+        profile = request.user.profile
+        serializer = UserProfileSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
 
 
 class TicketList(APIView):
