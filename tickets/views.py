@@ -154,14 +154,38 @@ class TicketDetail(APIView):
 class CommentView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request, ticket_id):
+        comments = Comment.objects.filter(ticket_id=ticket_id).select_related("user")
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data)
+
     def post(self, request, ticket_id):
-        ticket = Ticket.objects.get(id=ticket_id)
+        ticket = get_object_or_404(Ticket, id=ticket_id)
         serializer = CommentSerializer(data=request.data)
 
         if serializer.is_valid():
             serializer.save(user=request.user, ticket=ticket)
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+    
+class DashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        total_tickets = Ticket.objects.filter(created_by=user).count()
+        open_tickets = Ticket.objects.filter(created_by=user, status=Ticket.Status.OPEN).count()
+        in_progress_tickets = Ticket.objects.filter(created_by=user, status=Ticket.Status.IN_PROGRESS).count()
+        closed_tickets = Ticket.objects.filter(created_by=user, status=Ticket.Status.CLOSED).count()
+
+        return Response({
+            "total_tickets": total_tickets,
+            "open_tickets": open_tickets,
+            "in_progress_tickets": in_progress_tickets,
+            "closed_tickets": closed_tickets
+        })
+    
     
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
