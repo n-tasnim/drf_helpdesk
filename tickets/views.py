@@ -6,8 +6,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from tickets.pagination import TicketPagination
 from tickets.permissions import IsAdminOrOwner
-from .models import Ticket, User, UserProfile
-from .serializers import TicketSerializer, UserProfileSerializer, UserSerializer
+from .models import Ticket, User, UserProfile, Comment
+from .serializers import CommentSerializer, TicketSerializer, UserProfileSerializer, UserSerializer
 from django.views import View
 from django.db.models import Q
 from django.contrib.auth import authenticate
@@ -82,7 +82,6 @@ class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request):
-        
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
     
@@ -152,7 +151,18 @@ class TicketDetail(APIView):
         ticket.delete()
         return Response(status=204)
 
- 
+class CommentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, ticket_id):
+        ticket = Ticket.objects.get(id=ticket_id)
+        serializer = CommentSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save(user=request.user, ticket=ticket)
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 

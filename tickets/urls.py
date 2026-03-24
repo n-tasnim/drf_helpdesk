@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import LoginView, TicketDetail, TicketList, LogoutView, RegistrationView, UserProfileView
+from .views import CommentView, LoginView, TicketDetail, TicketList, LogoutView, RegistrationView, UserProfileView
 from django.conf import settings
 
 urlpatterns = [
@@ -9,6 +9,7 @@ urlpatterns = [
     path('<int:pk>/', TicketDetail.as_view(), name='ticket-detail'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('profile/', UserProfileView.as_view(), name='profile'),
+    path('<int:ticket_id>/comments/', CommentView.as_view(), name='ticket-comments'),
 ]
 
 if settings.DEBUG:
